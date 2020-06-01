@@ -1,89 +1,29 @@
-This project seeks to analyze the distance to default (DD) and probability of default (PD) of publicly-traded companies for year year from 1970-2015. The goal is to see how the DD and PD change from each year to the next and how these to measures related to the overall health of the economy. This is given by various financial stress indices, such as the NBER Recession Index, Moody's BAA-Fed Fund Spread, and the Cleveland Financial Stress Index. 
+This project seeks to implement an investment strategy using several important investment principles developed in Daniel Weagley's Finance and Investments course at Georgia Tech.
 
-In calculating the DD and PD, there are three main methods, with each method being more accurate and more complex. The three methods are the naive, the direct, and the iterative method, which will be explained in more detail.
+This task is divided into six parts:
 
-Thus, this task is divided into six parts: 
+1. Collecting the tickers to use
+2. Predict the returns for next month
+3. Predict the standard deviation for next month
+4. Calculate the optimal portfolio
+5. Invest automatically in Fidelity
 
-1. Downloading the Data
-2. Calculating the DD and PD with the Naive Method
-3. Calculating the DD and PD with the Direct Method
-4. Calculating the DD and PD with the Indirect Method
-5. Comparison of the Methods
-6. Comparison with Financial Stress Indices
+### 1. Collecting the tickers to use
 
-### 1. Downloading the Data
+The tickers used were scraped from the top weighted tickers chosen in five low-volatility ETF currently on the market. These ETFs are:
 
-There were a few main sources of data used for this project:
-  
-a. DSF : The daily stock returns and volume, along with shares outstanding, were obtained by analyzing the DSF SAS file which was obtained through the QCF server. This data file had company information in the form of the CUSIP number and was used to obtain the share price, the return from the previous year, number of shares, and the volatility of the firm's equity value.
+- State Street Global Advisers Low Volatility ETF (ONEV)
+- ishares MSCI Minimum Volatility ETF (USMV)
+- Vanguard U.S. Minimum Volatility ETF (VFMV)
+- Invesco S&P 500 Low Volatility ETF (SPLV)
+- Fidelity Low Volatility Factor ETF (FDLO)
 
-b. FUNDA : This company-specific data information file contained information on the outstanding debt held by each company and the link between CUSIP and the CIK number. This was used with DSF in order to calculate the distance to default. 
-  
-c. DAILYFED : This dataset contained the 3-month treasury bond yield, which was used as the risk-free interest rate, This risk-free rate was then used in methods 2 and 3 to calculate the distance to default.
-  
-d. NBER Recession Data : This information regarding recessions contains two values: 0 to indicate an expansionary period, and 1 to indicate a recessionary period. The link is here: [NBER Recession Data](https://research.stlouisfed.org/fred2/series/USREC).
+These ticker weights are updated daily on each firm's website, and thus the top tickers can change day-to-day. Additionally, I picked a few tickers of my own to include.
 
-e. Moody's BAA-Fed Fund Spread : This data file contains the spread between BAA Corporate Bond yields and the Fed Funds rate. When in a recessionary period, this spread tends to be high, because the BAA Corporate Bond yields are closely linked to the probability of default for firms in this same riskiness level. The link is here: [Moody's BAA-Fed Fund Spread](https://fred.stlouisfed.org/series/BAAFFM).
+### 2. Predict the returns for next month
 
-f. Cleveland Financial Stress Index : This dataset is similarly a gauge of the financial stress in the US financial system, with a high score indicating significant stress, and a low score indicates a low-stress period. However, it needs to be takes with a degree of cautions, because as the authors note themselves, the calculation of this index contains errors. The link is here: [Cleveland Financial Stress Index](https://fred.stlouisfed.org/series/CFSI).
+Once the tickers were obtained, then the historical adjusted closing price was obtained throught Yahoo Finance's API
 
-In actually scraping and extracting the data, the SAS Software was used in order to prepare the data. SAS was necessary in order to deal with the sheer size of the DSF and FUNDA dataset would make it infeasable for direct analysis in the R Statistical Package.
-
-### 2. Calculating the DD and the PD with the Naive Method
-
-The naive method calculates the distance to default (DD) as:
-
-<p align="center">
-  <img height='70' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/2calc1.png">
-</p>
-
-where
-
-<p align="center">
-  <img height='70' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/2calc2.png">
-</p>
-
-Here,
-
-- E is the firm's market capitalization (equity) value
-- F is the firm's value of debt
-- T represents the time period of one year
-- <img height='15' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/2calc4.png"> represents the volatility of the firm's market capitalization E over the past year.
-- <img height='15' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/2calc3.png"> represents the volatility of the firm's assets over the past year using the naive method.
-
-Now, from these calculations, and according to the Black-Scholes theory we can calculate the PD as 
-
-<p align="center">
-  <img height='70' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/2calc5.png">
-</p>
-
-In order to calculate these values over the range from 1970-2015, 200 firms were randomly selected from each year. This was done in an effort to lower the computational strain while still capturing the essence of the calculations.
-
-We can compute the descriptive statistics over the entire sample period for the DD and PD given by:
-
-| --- | Distance to Default (DD) | Probability of Default (PD) | 
-| Number of Observations	| 9195 |	9195 |
-| Minimum	| -4.691 |	0.000 |
-| 25th Percentile	| 5.082 |	0.000 |
-| 50th Percentile	| 8.775 |	0.000 |
-| Mean	| inf |	0.0109 |
-| 75th Percentile	| 14.562 |	0.000 |
-| Maximum	| inf |	0.999 |
-| Standard Deviation	| N/A |	0.0589 |
-
-Additionally, we can compare the descriptive statistics across time. However, in many occurrences the debt of a firm is zero, making the distance to default effectively zero and throwing off the descriptive statistics for distance to default. Thus, it is more convenient to plot the PD instead. The mean, 25th, 50th, and 75th percentiles for PD across time is given by:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/2graph1.png">
-</p>
-
-with the standard deviation given by:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/2graph2.png">
-</p>
-
-The calculation was completed in the R Markdown file 'defaultCalculation.r' under the section 'Naive Sentiment Analysis' header.
 
 ### 3. Calculating the DD and the PD with the Direct Method
 
