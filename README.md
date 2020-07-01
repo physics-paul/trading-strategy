@@ -1,14 +1,27 @@
-This project seeks to implement an investment strategy using several important investment principles developed in Daniel Weagley's Finance and Investments course at Georgia Tech.
+This project seeks to implement an investment strategy using several important investment principles developed in Daniel Weagley's Finance and Investments course at Georgia Tech. The text underlying these principles are found in Andrew Ang's Asset Management text.
 
-This task is divided into six parts:
+This task is divided into ten main parts:
 
-1. Collecting the tickers to use
-2. Predict the returns for next month
-3. Predict the standard deviation for next month
-4. Calculate the optimal portfolio
-5. Invest automatically in Fidelity
+1.1.  Collecting Current Portfolio Information from Fidelity
+2.1.  Collecting Tickers to Use
+3.1.  Combine Tickers into a Portfolio
+4.1.  Obtain the Fama-French 5-Factors
+4.2.  Obtain the Set of Returns for the Whole Universe
+4.3.  Regress the Set of Returns to Fama-French 5-factors
+5.1.  Forecast the Fama-French 5-Factors
+6.1.  Estimate Returns From Forecast of Fama-French 5-Factors
+7.1.  Forecast the Standard Deviation Using the Garch Model
+8.1.  Determine the Maximum Amount to Invest in Bonds
+9.1.  Calculate the Mean-Variance Optimal Portfolio
+9.2.  Determine the Optimal Number of Shares
+10.1. Implement this Portoflio in Fidelity: Liquidate Portfolio
+10.2. Implement this Portfolio in Fidelity: Buy Optimal Portfolio
 
-### 1. Collecting the tickers to use
+### 1.1.  Collecting Current Portfolio Information from Fidelity
+
+The current portfolio was obtained by using the Selenium module in Python to automate logging into Fidelity and scraping the webpage to obtain the current portfolio information as well as the current holdings. The current portfolio holdings are going to be used when executing trades and liquiding the portfolio. 
+
+### 2.1.  Collecting Tickers to Use
 
 The tickers used were scraped from the top weighted tickers chosen in five low-volatility ETF currently on the market. These ETFs are:
 
@@ -18,11 +31,31 @@ The tickers used were scraped from the top weighted tickers chosen in five low-v
 - Invesco S&P 500 Low Volatility ETF (SPLV)
 - Fidelity Low Volatility Factor ETF (FDLO)
 
-These ticker weights are updated daily on each firm's website, and thus the top tickers can change day-to-day. Additionally, I picked a few tickers of my own to include.
+These ticker weights are updated daily on each firm's website, and thus the top tickers can change day-to-day. Additionally, I picked a few tickers of my own to include, which vary based on my taste, etc.
+
+### 3.1.  Combine Tickers into a Portfolio
+
+Next, the tickers are all combined into one large portfolio, with a condition being each ticker in the combined portfolio must have been selected from more than one of the ETFs used in the analysis. This is done in order to ensure a more robust choice of tickers selected in the larger portfolio.
+
+### 4.1.  Obtain the Fama-French 5-Factors
+
+The Fama-French 5-Factors are a set of risk factors which explain to a very strong degree the risk premium present in equities. These 5-factors are:
+
+- Rm - Rf : the market risk premium, which is the excess return on the market
+- SMB : small minus big, which is the excess return of small stocks in comparison to big stocks
+- HML : high book-to-market minus low book-to-market, which is a value investing strategy to purchase stocks with good book-to-market ratios.
+ - RMW : robust minus weak, which described the premium for robust operating portfolios minus weak operating portfolios
+ - CMA : conservative minus agressive, which describes the premium for conservative investment firms and agressive investment firms.
+ 
+ These factors are provided by Eugene Fama's website, given by the (link)[https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library/f-f_5_factors_2x3.html].
+ 
+ 
+
+
 
 ### 2. Predict the returns for next month
 
-Once the tickers were obtained, then the historical adjusted closing price was obtained throught Yahoo Finance's API
+Once the tickers were obtained, then the historical adjusted closing price was obtained throught Yahoo Finance's API module in Python called 'yfinance'
 
 
 ### 3. Calculating the DD and the PD with the Direct Method
