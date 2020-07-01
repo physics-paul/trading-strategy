@@ -28,10 +28,10 @@ Next, the tickers are all combined into one large portfolio, with a condition be
 
 The Fama-French 5-Factors are a set of risk factors which explain to a very strong degree the risk premium present in equities. These 5-factors are:
 
-- Rm - Rf : the market risk premium, which is the excess return on the market
-- SMB : small minus big, which is the excess return of small stocks in comparison to big stocks
+- Rm - Rf : the market risk premium, which is the excess return on the market.
+- SMB : small minus big, which is the excess return of small stocks in comparison to big stocks.
 - HML : high book-to-market minus low book-to-market, which is a value investing strategy to purchase stocks with good book-to-market ratios.
-- RMW : robust minus weak, which described the premium for robust operating portfolios minus weak operating portfolios
+- RMW : robust minus weak, which described the premium for robust operating portfolios minus weak operating portfolios.
 - CMA : conservative minus agressive, which describes the premium for conservative investment firms and agressive investment firms.
  
  These factors are provided by Eugene Fama's website, given by the [link](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library/f-f_5_factors_2x3.html).
