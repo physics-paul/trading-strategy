@@ -1,6 +1,6 @@
 This project seeks to implement an investment strategy using several important investment principles developed in Daniel Weagley's Finance and Investments course at Georgia Tech. The text underlying these principles are found in Andrew Ang's Asset Management text.
 
-The theory is to rebalance a portfolio of 70% equities to 30% bonds, split evenly between corporate bonds (ticker: VTC) and government bonds (ticker: BND). This allocation of a 70/30% split amounts to a risk aversion parameter of 2.0, which is moderately risk-averse. The optimal shares of equities for each ticker are determined by the highest Sharpe ratio portfolio and then the entire portfolio is implement automatically in Fidelity at the end of each month.
+The theory is to rebalance a portfolio of 70% equities to 30% bonds, split evenly between corporate bonds (ticker: VTC) and government bonds (ticker: BND). This allocation of a 70/30% split amounts to a risk aversion parameter of 2.0, which is moderately risk-averse. The optimal shares of equities for each ticker are determined by the highest Sharpe ratio portfolio and then the entire portfolio is then implemented automatically in Fidelity at the end of each month.
 
 This task is divided into ten main parts:
 
