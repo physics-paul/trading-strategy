@@ -13,7 +13,7 @@ The current portfolio was obtained by using the Selenium module in Python to aut
 The tickers used were scraped from the top weighted tickers chosen in five low-volatility ETF currently on the market. These ETFs are:
 
 - State Street Global Advisers Low Volatility ETF (ONEV)
-- ishares MSCI Minimum Volatility ETF (USMV)
+- iShares MSCI Minimum Volatility ETF (USMV)
 - Vanguard U.S. Minimum Volatility ETF (VFMV)
 - Invesco S&P 500 Low Volatility ETF (SPLV)
 - Fidelity Low Volatility Factor ETF (FDLO)
