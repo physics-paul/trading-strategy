@@ -4,7 +4,7 @@ The theory is to rebalance a portfolio of 70% equities to 30% bonds, split evenl
 
 This task is divided into ten main parts:
 
-1.1.  Collecting Current Portfolio Information from Fidelity \n
+1.1.  Collecting Current Portfolio Information from Fidelity
 2.1.  Collecting Tickers to Use
 3.1.  Combine Tickers into a Portfolio
 4.1.  Obtain the Fama-French 5-Factors
