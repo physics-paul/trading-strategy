@@ -2,22 +2,7 @@ This project seeks to implement an investment strategy using several important i
 
 The theory is to rebalance a portfolio of 70% equities to 30% bonds, split evenly between corporate bonds (ticker: VTC) and government bonds (ticker: BND). This allocation of a 70/30% split amounts to a risk aversion parameter of 2.0, which is moderately risk-averse. The optimal shares of equities for each ticker are determined by the highest Sharpe ratio portfolio and then the entire portfolio is then implemented automatically in Fidelity at the end of each month.
 
-This task is divided into ten main parts
-
-#### 1.1.  Collecting Current Portfolio Information from Fidelity
-#### 2.1.  Collecting Tickers to Use
-#### 3.1.  Combine Tickers into a Portfolio
-#### 4.1.  Obtain the Fama-French 5-Factors
-#### 4.2.  Obtain the Set of Returns for the Whole Universe
-#### 4.3.  Regress the Set of Returns to Fama-French 5-factors
-#### 5.1.  Forecast the Fama-French 5-Factors
-6.1.  Estimate Returns From Forecast of Fama-French 5-Factors
-7.1.  Forecast the Standard Deviation Using the GARCH Model
-8.1.  Determine the Maximum Amount to Invest in Bonds
-9.1.  Calculate the Mean-Variance Optimal Portfolio
-9.2.  Determine the Optimal Number of Shares
-10.1. Implement this Portoflio in Fidelity: Liquidate Portfolio
-10.2. Implement this Portfolio in Fidelity: Buy Optimal Portfolio
+This task is divided into ten main parts:
 
 ### 1.1.  Collecting Current Portfolio Information from Fidelity
 
