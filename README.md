@@ -1,5 +1,7 @@
 This project seeks to implement an investment strategy using several important investment principles developed in Daniel Weagley's Finance and Investments course at Georgia Tech. The text underlying these principles are found in Andrew Ang's Asset Management text.
 
+The theory is to rebalance a portfolio of 70% equities to 30% bonds, split evenly between corporate bonds (ticker: VTC) and government bonds (ticker: BND). This allocation of a 70/30% split amounts to a risk aversion parameter of 2.0, which is moderately risk-averse. The optimal shares of equities for each ticker are determined by the highest Sharpe ratio portfolio and then the entire portfolio is implement automatically in Fidelity at the end of each month.
+
 This task is divided into ten main parts:
 
 1.1.  Collecting Current Portfolio Information from Fidelity
@@ -10,7 +12,7 @@ This task is divided into ten main parts:
 4.3.  Regress the Set of Returns to Fama-French 5-factors
 5.1.  Forecast the Fama-French 5-Factors
 6.1.  Estimate Returns From Forecast of Fama-French 5-Factors
-7.1.  Forecast the Standard Deviation Using the Garch Model
+7.1.  Forecast the Standard Deviation Using the GARCH Model
 8.1.  Determine the Maximum Amount to Invest in Bonds
 9.1.  Calculate the Mean-Variance Optimal Portfolio
 9.2.  Determine the Optimal Number of Shares
@@ -44,167 +46,53 @@ The Fama-French 5-Factors are a set of risk factors which explain to a very stro
 - Rm - Rf : the market risk premium, which is the excess return on the market
 - SMB : small minus big, which is the excess return of small stocks in comparison to big stocks
 - HML : high book-to-market minus low book-to-market, which is a value investing strategy to purchase stocks with good book-to-market ratios.
- - RMW : robust minus weak, which described the premium for robust operating portfolios minus weak operating portfolios
- - CMA : conservative minus agressive, which describes the premium for conservative investment firms and agressive investment firms.
+- RMW : robust minus weak, which described the premium for robust operating portfolios minus weak operating portfolios
+- CMA : conservative minus agressive, which describes the premium for conservative investment firms and agressive investment firms.
  
- These factors are provided by Eugene Fama's website, given by the (link)[https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library/f-f_5_factors_2x3.html].
- 
- 
+ These factors are provided by Eugene Fama's website, given by the [link](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library/f-f_5_factors_2x3.html).
 
+### 4.2.  Obtain the Set of Returns for the Whole Universe
 
+The returns are obtained by the Yahoo Finance Python module, given by yfinance. This module scrapes Yahoo Finance for historical information based on the ticker. The returns are obtained daily for the past 30 months. This period of time was chosen to capture the essence of the returns, and this time frame produced better results in the ARIMA analysis.
 
-### 2. Predict the returns for next month
+### 4.3.  Regress the Set of Returns to Fama-French 5-factors
 
-Once the tickers were obtained, then the historical adjusted closing price was obtained throught Yahoo Finance's API module in Python called 'yfinance'
+The set of returns are then regressed on the Fama-French 5-factors to obtain coefficients for the dependency of each stock on the 5 risk premium factors which make up the return.
 
+### 5.1.  Forecast the Fama-French 5-Factors
 
-### 3. Calculating the DD and the PD with the Direct Method
+Using an ARIMA (AutoRegressive Integrated Moving Average) analysis as a model for time-series forecasting, the Fama-French 5-factors are then estimated for the next month, from which the returns will be estimated. Factors are easier to estimate than returns.
 
-The direct method calculates the distance to default (DD) by treating the market capitalization E as an option on the firm's assets with strike price F, the company's debt. In the Black-Scholes theory, this equation is given by:
+### 6.1.  Estimate Returns From Forecast of Fama-French 5-Factors
 
-<p align="center">
-  <img height='50' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc1.png">
-</p>
+Using the forecast of returns for the Fama-French 5-factors, the set of returns for tickers in the portfolio is estimated using the coefficients of each stock's dependency on the 5 risk premium factors which make up the return.
 
-where
+### 7.1.  Forecast the Standard Deviation Using the GARCH Model
 
-<p align="center">
-  <img height='80' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc3.png">
-</p>
+Using the GARCH (Generalized AutoRegressive Conditional Heteroskedasticity) model, which was developed to estimate volatility in financial markets, the standard deviation of each stock in the portfolio can be estimated based on the past history of volatility for each return.
 
-and 
+Additionally, the covariance between each stock pair is estimated by simply looking at the historical correlation between the tickers which make up the portfolio.
 
-<p align="center">
-  <img height='40' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc4.png">
-</p>
+### 8.1.  Determine the Maximum Amount to Invest in Bonds
 
-Here,
+One of the core principles of this investment strategy is to automatically rebalance between an allocation of 70% for equities and 30% for bonds at the end of each month, or as near as possible to this percentage. Since shares can only be invested in integer amounts, there is some error in achieving the perfect allocation of 30% in bonds. Thus, to get as close as possible, the optimization solver Gurobi is used to calculed the optimal number of VTC and BND shares to buy to get as close as possible to a 30% weight in bonds, split evenly between corporate and government bonds.
 
-<p align="center">
-  <img height='80' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc2.png">
-</p>
+### 9.1.  Calculate the Mean-Variance Optimal Portfolio
 
-is the cumulative normal distribution. Now, the volatility of the firm's market capitalization can be measured as a funciton of the volatilty in the firm's assets, and it is given by:
+After the optimal number of bonds were chosen in 8.1 were chosen, the remaining portfolio is allocated to equities and is constructed as a constrained mean-variance optimized portfolio. The constraints are each weight for each asset much be between 1.0% and 20.0% of the equity portfolio. In order to effectively calculate a realistic optimal portfolio, the weights for each stock must lie between 1% and 20% of the equity portfolio. Additionally, each stock must have at least one share, unless the value of the share is such to exceed the 20% of the equity portoflio. The amount invested with the equity portfolio must lie between 97% and 103% of the equity portfolio value, which means the goal is for the entire equity portfolio to be invested. 
 
-<p align="center">
-  <img height='80' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc5.png">
-</p>
+This optimization task is handled by the Guribi optimization software as a convex, integer optimization program. The number of shares in each asset can be optimized in various ways, and Gurobi is specially designed to handle this integer program. The problem is an integer program, because the number of shares must be an integer.
 
-At this point, we know:
+The Gurobi optimizer can then be run for several required minimum returns in order to create an efficient frontier. The efficient frontier contains a relationship between the expected return of the portfolio and the expected standard deviation of the portfolio; This is used in determining the optimal portfolio.
 
-- E is the firm's market capitalization (equity) value
-- F is the firm's value of debt
-- T represents the time period of one year
-- <img height='15' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/2calc4.png"> represents the volatility of the firm's market capitalization E over the past year.
+### 9.2.  Determine the Optimal Number of Shares
 
-To highlight, we don't know V, the firm's assets, and <img height='15' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc6.png">, the volatility of the firm's assets. These two things we can directly solve for, because we have two equations and two unknowns. The distance of default, <img height='15' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc7.png">, can then be calculated. Additionally, we can calculate the probability of default, which is simply the cumulative normal distribution integrated to an upper bound of the distance to default. Given before, this value is:
+The optimal number of shares in each asset is given by a particular place on the efficient frontier, which corresponds to the highest ratio between the expected return and expected standard deviation. This optimal ratio is known as the maximum Sharpe Ratio, and shares are then traded based on this optimal portfolio.
 
-<p align="center">
-  <img height='80' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc2.png">
-</p>
+### 10.1. Implement this Portoflio in Fidelity: Liquidate Portfolio
 
-Using the same range of data as in the naive method, for the direct method, we can compute the descriptive statistics over the entire sample period for the DD and PD given by:
+Since Fidelity does not have an API and the cookies required to effectively make http requests from Python are burdensome if not impossible to understand, the web driver Selenium can be used to automate the trade process in Fidelity. From 1.1, the current portfolio holdings are then entered into Fidelity as 'Sell' orders, which are automate and executed immediately.
 
-| --- | Distance to Default (DD) | Probability of Default (PD) | 
-| Number of Observations	| 9195 |	9195 |
-| Minimum	| -5.728 |	0.000 |
-| 25th Percentile	| 3.073 |	0.000 |
-| 50th Percentile	| 5.565 |	0.000 |
-| Mean	| inf |	0.0262 |
-| 75th Percentile	| 10.245 |	0.001 |
-| Maximum	| inf |	0.999 |
-| Standard Deviation	| N/A |	0.101 |
+### 10.2. Implement this Portfolio in Fidelity: Buy Optimal Portfolio
 
-Additionally, we can compare the descriptive statistics across time. The mean, 25th, 50th, and 75th percentiles for the PD across time is given by:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3graph1.png">
-</p>
-
-with the standard deviation given by:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3graph2.png">
-</p>
-
-The calculation was completed in the R Markdown file 'defaultCalculation.r' under the section 'Direct Sentiment Analysis' header.
-
-### 4. Calculating the DD and the PD with the Indirect Method
-
-Both of the previous methods, the naive method and the direct method, calculate the volatility by directly solving for it. This method takes a different approach: 
-
-- First, guess a value for the volatility of the firm's assets for the previous year.
-
-- Second, using the equity option equation (and the guess of the volatility parameter), calculate the daily value of the firm's assets.
-
-- Third, estimate the volatility of these daily values of the firm's assets.
-
-- Repeat with the new value of the firm's volatility until <img height='15' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc6.png"> converges.
-
-Thus, we can calculate V, the firm's assets, and <img height='15' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/3calc6.png">, the volatility of the firm's assets, for every year for every firm sampled.
-
-Using the same range of data as in the naive and direct method, for the indirect method, we can compute the descriptive statistics over the entire sample period for the DD and PD given by:
-
-
-| --- | Distance to Default (DD) | Probability of Default (PD) | 
-| Number of Observations	| 9195 |	9195 |
-| Minimum	| -10.414 |	0.000 |
-| 25th Percentile	| 5.726 |	0.000 |
-| 50th Percentile	| 13.501 |	0.000 |
-| Mean	| inf |	0.0332 |
-| 75th Percentile	| 31.306 |	0.001 |
-| Maximum	| inf |	0.999 |
-| Standard Deviation	| N/A |	0.135 |
-
-Additionally, we can compare the descriptive statistics across time. The mean, 25th, 50th, and 75th percentiles for the PD and across time is given by:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/4graph1.png">
-</p>
-
-with the standard deviation given by:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/4graph2.png">
-</p>
-
-The calculation was completed in the R Markdown file 'defaultCalculation.r' under the section 'Indirect Sentiment Analysis' header.
-
-### 5. Comparison of the Methods
-
-At this point, we can compare all three methods, by looking at the correlation across the mean DD value throughout the years. This correlation for the mean of the probability to default, PD, is given in the following table:
-
-| --- | Naive Method | Direct Method | Indirect Method |
-| Naive Method	| 1.000 |	0.815 | 0.673 |
-| Direct Method	| 0.815 |	1.000 | 0.763 |
-| Indirect Method	| 0.673 |	0.763 | 1.000 |
-
-Graphically, we can represent this correlation by looking at the mean of the methods across time:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/5graph1.png">
-</p>
-
-### 6. Comparison with Financial Stress Indices
-
-For the rest of this analsis, the distance to default will be calculated by the mean value for each year using the direct method. This DD will will be compared to financial stress indices.
-
-When comparing the NBER Recession data with the calculation of the DD, the resulting plot yields:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/6graph1.png">
-</p>
-
-Additionally, the plot of the Moody's BAA-Fed Fund Spread with the DD looks like:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/6graph2.png">
-</p>
-
-Lastly, we can compare our calculations to the Cleveland Financial Stress Index, we obtain the result:
-
-<p align="center">
-  <img height='400' src="https://raw.githubusercontent.com/physics-paul/mfi-assignment5/master/images/6graph3.png">
-</p>
-
-Interestingly, we see a strong correlation between the distance to default (DD), the probability of default (PD), and current economic conditions, confirming the expected result firms are more likely to default in difficult economic times.
+After the portfolio has been entirely liquidated, the optimal number of shares can then be automated in Fidelity with Selenium to generate the optimal portfolio. This portfolio is then rebalanced on the last trading day of each month, simply by calling the Python script to complete the analysis.
