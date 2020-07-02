@@ -41,7 +41,7 @@ bonds = ['BND', 'VTC'] # bonds to use in the bond portfolio
 # modifications
 
 n = 15 # number of stocks to pick from each portfolio
-additionalStocks = ['AAPL','KL'] # additional stocks to include
+additionalStocks = ['AAPL'] # additional stocks to include
 highestAllocation = 0.20 # max weight to place on each stock
 lowestAllocation = 0.01 # min weight to place on each stock
 gamma = 1.0 # regularization parameter to spread 
@@ -87,24 +87,28 @@ def getFidelityPortfolioHoldings():
 
         # open up fidelity's website
 
-        driver.get('https://login.fidelity.com/ftgw/Fidelity/RtlCust/Login/Init')
+        driver.get(\
+            'https://login.fidelity.com/ftgw/Fidelity/RtlCust/Login/Init')
 
         # sign-in with username and password
 
         webdriver.support.ui.WebDriverWait(driver,30)\
-            .until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'input#userId-input')))\
-            .send_keys(username)
+            .until(EC.element_to_be_clickable((By.CSS_SELECTOR, \
+                'input#userId-input'))).send_keys(username)
 
-        driver.find_element_by_css_selector('input#password').send_keys(password)
+        driver.find_element_by_css_selector(\
+            'input#password').send_keys(password)
         driver.find_element_by_css_selector('button#fs-login-button').click()
 
         # navigate to the account positions page
 
-        driver.get('https://oltx.fidelity.com/ftgw/fbc/oftop/portfolio#positions')
+        driver.get(\
+            'https://oltx.fidelity.com/ftgw/fbc/oftop/portfolio#positions')
 
         # grab the current portfolio value from the account positions page
 
-        elementPresent = EC.presence_of_element_located((By.CSS_SELECTOR,'.account-selector--all-accounts-balance'))
+        elementPresent = EC.presence_of_element_located((By.CSS_SELECTOR, \
+            '.account-selector--all-accounts-balance'))
 
         element = WebDriverWait(driver, 20).until(elementPresent)
 
@@ -114,7 +118,8 @@ def getFidelityPortfolioHoldings():
 
         portfolioHoldings = {'ticker':[], 'holdings':[]}
 
-        # the holdings are found through the css selector, which starts at index 5
+        # the holdings are found through the css selector,
+        # which starts at index 5
 
         startingIndex = 5
 
@@ -124,7 +129,8 @@ def getFidelityPortfolioHoldings():
 
         getStocks = True
 
-        # keep iterating as long as another holding is found in the css selector
+        # keep iterating as long as another holding is found
+        # in the css selector
 
         while getStocks:
             
@@ -132,14 +138,17 @@ def getFidelityPortfolioHoldings():
 
             try:
 
-                # for the first holding, make sure the webpage
+                # for the first holding,
+                # make sure the webpage has finished loading
 
                 if addToStartingIndex == 0:
 
-                    elementPresent['ticker'] = EC.presence_of_element_located((\
-                        By.CSS_SELECTOR,tickerCSSSelector(index)))
-                    elementPresent['holdings'] = EC.presence_of_element_located((\
-                        By.CSS_SELECTOR,holdingsCSSSelector(index)))
+                    elementPresent['ticker'] = \
+                        EC.presence_of_element_located(\
+                            (By.CSS_SELECTOR,tickerCSSSelector(index)))
+                    elementPresent['holdings'] = \
+                        EC.presence_of_element_located((By.CSS_SELECTOR,\
+                            holdingsCSSSelector(index)))
 
                     ticker = WebDriverWait(driver, 20).until(\
                         elementPresent['ticker']).text
@@ -149,8 +158,10 @@ def getFidelityPortfolioHoldings():
 
                 else:
 
-                    ticker = driver.find_element_by_css_selector(tickerCSSSelector(index)).text
-                    holdings = driver.find_element_by_css_selector(holdingsCSSSelector(index)).text
+                    ticker = driver.find_element_by_css_selector(\
+                        tickerCSSSelector(index)).text
+                    holdings = driver.find_element_by_css_selector(\
+                        holdingsCSSSelector(index)).text
                     holdings = int(float(holdings))
 
                 portfolioHoldings['ticker'].append(ticker)
@@ -379,12 +390,12 @@ for tick in tickers:
     
     priceStocks[tick] = priceStock['Close']
 
-# obtain the price of the bonds
+# obtain the current price of the bonds
 
 # note: yfinance was throwing an issue with yf.download as of 6.28.2020
 # used this workaround instead
 
-priceBonds = pd.DataFrame()
+currentPriceBonds = pd.DataFrame()
 
 for bond in bonds:
     while True:
@@ -395,9 +406,9 @@ for bond in bonds:
             continue
         break  
     
-    priceBonds[bond] = priceBond['Close']
+    currentPriceBonds[bond] = priceBond['Close'].dropna()
 
-priceBonds = priceBonds.last('h')
+currentPriceBonds = currentPriceBonds.last('h')
 
 # convert the price of the stocks to monthly data
 
@@ -405,8 +416,10 @@ priceMonthlyStocks = priceStocks.resample('1M').last()
 
 # obtain the returns of the stocks
 
-returnDailyStocks = priceStocks.rolling(2).apply(lambda x: x[1] / x[0] - 1.0)
-returnStocks = priceMonthlyStocks.rolling(2).apply(lambda x: x[1] / x[0] - 1.0)
+returnDailyStocks = priceStocks.rolling(2).apply(\
+    lambda x: x[1] / x[0] - 1.0)
+returnStocks = priceMonthlyStocks.rolling(2).apply(\
+    lambda x: x[1] / x[0] - 1.0)
 
 # %% 4.3 regress the set of returns to the fama-french 5-factors
 
@@ -560,7 +573,8 @@ amountBonds = (1-optimalWeightAllocation)*portfolioValue
 
 # calculate a lower bound on the number of bond shares
 
-bondSharesLowerBound = np.floor(amountBonds / priceBonds / priceBonds.shape[1])
+bondSharesLowerBound = np.floor(amountBonds / currentPriceBonds \
+    / currentPriceBonds.shape[1])
 
 # gurobi model
 
@@ -568,7 +582,7 @@ m = grb.Model('bond allocation')
 
 # add variables
 
-bondNames = priceBonds.columns.values
+bondNames = currentPriceBonds.columns.values
 
 numberOfShares = {}
 
@@ -597,11 +611,11 @@ m.update()
 # add constraints
 
 m.addConstr(errorTerm >= \
-    np.array(list(numberOfShares.values())).dot(priceBonds.values[0].T)\
-        - amountBonds)
+    np.array(list(numberOfShares.values())).dot(\
+        currentPriceBonds.values[0].T)- amountBonds)
 
-m.addConstr(errorTerm >= amountBonds - \
-    np.array(list(numberOfShares.values())).dot(priceBonds.values[0].T))
+m.addConstr(errorTerm >= amountBonds - np.array(list(\
+    numberOfShares.values())).dot(currentPriceBonds.values[0].T))
 
 m.update()
 
@@ -617,7 +631,8 @@ bondShares = pd.Series([i.x for i in bondShares],\
 
 # determine the maximum amount available to invest in equities
 
-maxInvestibleEquities = portfolioValue - bondShares.dot(priceBonds.T)[0]
+maxInvestibleEquities = \
+    portfolioValue - bondShares.dot(currentPriceBonds.T)[0]
 
 # %% 9.1 calculate the mean-variance optimal portfolio
 
@@ -683,7 +698,8 @@ for minRet in desiredMinimumReturns:
 
     # determine weights in the objective functions
 
-    shareValues = np.diag(list(numberOfShares.values())).dot(currentStockPrice)
+    shareValues = np.diag(list(numberOfShares.values())).dot(\
+        currentStockPrice)
 
     weights = shareValues / maxInvestibleEquities
 
@@ -719,7 +735,8 @@ for minRet in desiredMinimumReturns:
 
     m.optimize()
 
-    # only continue if the optimizer was successful, which is a status code of 2
+    # only continue if the optimizer was successful,
+    # which is a status code of 2
 
     if m.Status == 2:
 
@@ -789,8 +806,8 @@ driver.get('https://login.fidelity.com/ftgw/Fidelity/RtlCust/Login/Init')
 # sign-in with username and password
 
 webdriver.support.ui.WebDriverWait(driver,30)\
-    .until(EC.element_to_be_clickable((By.CSS_SELECTOR, 'input#userId-input')))\
-    .send_keys(username)
+    .until(EC.element_to_be_clickable((By.CSS_SELECTOR, \
+        'input#userId-input'))).send_keys(username)
 
 driver.find_element_by_css_selector('input#password').send_keys(password)
 driver.find_element_by_css_selector('button#fs-login-button').click()
