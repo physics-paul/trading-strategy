@@ -257,7 +257,8 @@ tickersVanguard = [i["ticker"] for i in j['fund']['entity']][:n]
 # invesco s and p 500 low volatility etf (SPLV)
 
 website = "https://www.invesco.com/us/financial-products/"\
-    "etfs/holdings/main/holdings/0?ticker=SPLV&action=download"
+    "etfs/holdings/main/holdings/0?audienceType=Investor"\
+        "&ticker=SPLV&action=download"
 fileData = pd.read_csv(website)
 
 tickersInvesco = list(fileData.sort_values(by=["Weight"], ascending=False)\
