@@ -12,6 +12,7 @@ from io import BytesIO
 import yfinance as yf
 import statsmodels.api as sm
 import gurobipy as grb
+from functools import wraps
 from pdb import set_trace as pb
 from arch import arch_model
 from matplotlib import pyplot as plt
@@ -175,6 +176,10 @@ def getFidelityPortfolioHoldings():
 
                 continue
 
+        portfolioHoldings = pd.Series(
+            portfolioHoldings['holdings'],
+            index=portfolioHoldings['ticker'])
+
         loginKey = True
 
     except:
@@ -248,11 +253,37 @@ headers = {
     'Accept' : 'application/json'
 }
 
-response = r.get(url, headers=headers)
+# sometimes the json response doesn't go through
 
-j = response.json()
+def retry(times):
 
-tickersVanguard = [i["ticker"] for i in j['fund']['entity']][:n]
+    def wrapper_fn(f):
+
+        @wraps(f)
+        def new_wrapper(*args,**kwargs):
+            for i in range(times):
+                try:
+                    return f(*args,**kwargs)
+                except Exception as e:
+                    error = e
+            raise error
+
+        return new_wrapper
+
+    return wrapper_fn
+
+@retry(3)
+def getVanguardJson():
+    
+    response = r.get(url, headers=headers)
+
+    j = response.json()
+
+    tickersVanguard = [i["ticker"] for i in j['fund']['entity']][:n]
+
+    return tickersVanguard
+
+tickersVanguard = getVanguardJson()
 
 # invesco s and p 500 low volatility etf (SPLV)
 
@@ -717,7 +748,7 @@ for minRet in desiredMinimumReturns:
 
     # add constraint of weights must be within tolerance
 
-    m.addConstr(np.sum(shareValues) <= maxInvestibleEquities * 1.01,\
+    m.addConstr(np.sum(shareValues) <= maxInvestibleEquities * 1.00,\
         name='must not invest over the maximum threshold')
 
     m.addConstr(np.sum(shareValues) >= maxInvestibleEquities * 0.99,\
@@ -776,6 +807,8 @@ print(" 9.2 Determine the Optimal Number of Shares")
 equityShares = pd.Series(equityShares[np.array(shrpRatio).argmax()], \
     index=stockNames)
 
+allShares = equityShares.append(bondShares)
+
 print("")
 print(" The optimal allocation is:")
 print(" BONDS:")
@@ -786,7 +819,7 @@ print(" EQUITIES:")
 
 print(equityShares)
 
-# %% 10.1 implement this automatically in Fidelity
+# %% 10.1 implement this automatically in Fidelity : liquidate portfolio
 
 print(" 10.1 Implement this Portfolio in Fidelity: Liquidate Portfolio")
 print(" Now implementing the sell orders in Fidelity:")
@@ -823,8 +856,6 @@ time.sleep(5)
 
 driver.find_element_by_css_selector('.trade').click()
 
-time.sleep(5)
-
 # excecute a trade
 
 def trade(ticker, amount, actionType):
@@ -848,53 +879,49 @@ def trade(ticker, amount, actionType):
 
     driver.find_element_by_css_selector('#previewTrade').click()
 
-    time.sleep(5)
+    time.sleep(3)
 
     driver.find_element_by_css_selector('#placeOrder').click()
 
-    time.sleep(5)
+    time.sleep(3)
 
     driver.find_element_by_css_selector('#fttNewTicketButton').click()
 
     return True
 
+# calculate the number of shares to sell
+
+sharesToSell = (portfolioHoldings - allShares).fillna(0.0)
+
 # liquidate portfolio
 
-for tick,holding in zip(*portfolioHoldings.values()):
+for tick,holding in enumerate(sharesToSell):
 
-    trade(tick, holding, 'Sell')
+    if holding > 0.0:
 
-    print(" {0:5} shares of {1:5} sold".format(tick, holding))
+        trade(sharesToSell.index[tick], int(holding), 'Sell')
 
-    time.sleep(5)
+        print(" {0:5} shares of {1:5} sold".format(
+            holding, sharesToSell.index[tick]))
 
-# %% 10.2 implement this automatically in Fidelity
+# %% 10.2 implement this automatically in Fidelity : buy optimal portfolio
 
 print(" 10.2 Implement this Portfolio in Fidelity: Buy Optimal Portfolio")
 print(" Now implementing the trades in Fidelity:")
 
-# buying bonds
+# calculate the number of shares to buy
 
-for tick,holding in zip(*[bondShares.index,bondShares.values]):
+sharesToBuy = -sharesToSell
 
-    trade(tick, int(holding), 'Buy')
+# rebalance portfolio
 
-    print(" {0:5} shares of {1:5} sold".format(tick, holding))
+for tick,holding in enumerate(sharesToBuy):
 
-# buying equities
-
-for tick,holding in zip(*[equityShares.index,equityShares.values]):
-
-    if holding >= 1.0:
-
+    if holding > 0.0:
+    
         trade(tick, int(holding), 'Buy')
 
-        print(" {0:5} shares of {1:5} bought".format(tick, holding))
-
-        time.sleep(10)
-
-    else:
-
-        print(" {0:5} shares of {1:5} bought".format(tick, holding))
+        print(" {0:5} shares of {1:5} buy".format(
+            holding, sharesToSell.index[tick]))
 
 print(" FINISHED")
