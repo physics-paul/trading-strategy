@@ -40,8 +40,8 @@ bonds = ['BND', 'VTC'] # bonds to use in the bond portfolio
 
 # modifications
 
-n = 15 # number of stocks to pick from each portfolio
-additionalStocks = ['AAPL'] # additional stocks to include
+n = 20 # number of stocks to pick from each portfolio
+additionalStocks = ['AAPL','AMZN','KL'] # additional stocks to include
 highestAllocation = 0.20 # max weight to place on each stock
 lowestAllocation = 0.01 # min weight to place on each stock
 gamma = 1.0 # regularization parameter to spread 
@@ -51,7 +51,7 @@ gamma = 1.0 # regularization parameter to spread
 
 print(" Portfolio Optimization Strategy")
 print(" Paul Sanders")
-print(" Start 7.1.2020")
+print(" Start 6.1.2020")
 print(" ")
 
 # %% 1.1 collect portfolio information from fidelity
@@ -506,7 +506,7 @@ for var in range(5):
     fitted = model.fit()
 
     fc, se, conf = fitted.forecast(forecastMonths, alpha=0.05)
-
+    
     # forecast of the next month
 
     famaEstimation[var] = fc[-1]
@@ -541,7 +541,7 @@ for index,stk in enumerate(returnVariables.columns):
 
     # fit the garch model
 
-    fitGarch = garchModel.fit(disp='off', tol=10^-6)
+    fitGarch = garchModel.fit(disp='off')
 
     # grab the forecasted standard deviation each day for the next 20 days
 
@@ -823,9 +823,13 @@ time.sleep(5)
 
 driver.find_element_by_css_selector('.trade').click()
 
+time.sleep(5)
+
 # excecute a trade
 
 def trade(ticker, amount, actionType):
+
+    time.sleep(5)
 
     driver.find_element_by_css_selector('#qt-symbol').send_keys(ticker)
 
