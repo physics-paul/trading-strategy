@@ -42,7 +42,7 @@ bonds = ['BND', 'VTC'] # bonds to use in the bond portfolio
 # modifications
 
 n = 20 # number of stocks to pick from each portfolio
-additionalStocks = ['AAPL','AMZN','KL'] # additional stocks to include
+additionalStocks = ['KL'] # additional stocks to include
 highestAllocation = 0.20 # max weight to place on each stock
 lowestAllocation = 0.01 # min weight to place on each stock
 gamma = 1.0 # regularization parameter to spread 
@@ -261,7 +261,7 @@ def retry(times):
 
         @wraps(f)
         def new_wrapper(*args,**kwargs):
-            for i in range(times):
+            for _ in range(times):
                 try:
                     return f(*args,**kwargs)
                 except Exception as e:
@@ -313,11 +313,11 @@ index = 0
 index2 = 0
 
 while index < len(response):
-    index = response.find("ticker", index)
+    index = response.find("col-symbol", index)
     if index == -1:
         break
-    index2 = response.find(">", index)
-    tickersFidelity.append(response[index+8:index2-1])
+    index2 = response.find("/td", index)
+    tickersFidelity.append(response[index+12:index2-1])
     index += 2
         
 tickersFidelity = tickersFidelity[:n]
@@ -420,7 +420,7 @@ for tick in tickers:
             continue
         break  
     
-    priceStocks[tick] = priceStock['Close']
+    priceStocks[tick] = priceStock['Close'].dropna()
 
 # obtain the current price of the bonds
 
@@ -515,14 +515,16 @@ for var in range(5):
 
                 fitted = model.fit()
 
-                aicVal.append(fitted.aic)
+                if p + q > 0:
 
-                # check if it is the min
+                    aicVal.append(fitted.aic)
 
-                if (min(aicVal) == fitted.aic) and (p + q > 0):
+                    # check if it is the min
 
-                    pOpt = p
-                    qOpt = q
+                    if min(aicVal) == fitted.aic:
+
+                        pOpt = p
+                        qOpt = q
 
             except:
 
@@ -804,8 +806,9 @@ print(" 9.2 Determine the Optimal Number of Shares")
 
 # determine the optimal number of shares
 
-equityShares = pd.Series(equityShares[np.array(shrpRatio).argmax()], \
-    index=stockNames)
+equityShares = pd.Series(
+    equityShares[np.array(shrpRatio).argmax()],
+    index=pd.Index(stockNames))
 
 allShares = equityShares.append(bondShares)
 
@@ -891,7 +894,9 @@ def trade(ticker, amount, actionType):
 
 # calculate the number of shares to sell
 
-sharesToSell = (portfolioHoldings - allShares).fillna(0.0)
+sharesToSell = pd.concat(
+    [portfolioHoldings,allShares],axis=1).fillna(0.0)
+sharesToSell = sharesToSell.iloc[:,0] - sharesToSell.iloc[:,1]
 
 # liquidate portfolio
 
@@ -919,9 +924,9 @@ for tick,holding in enumerate(sharesToBuy):
 
     if holding > 0.0:
     
-        trade(tick, int(holding), 'Buy')
+        trade(sharesToBuy.index[tick], int(holding), 'Buy')
 
         print(" {0:5} shares of {1:5} buy".format(
-            holding, sharesToSell.index[tick]))
+            holding, sharesToBuy.index[tick]))
 
 print(" FINISHED")
